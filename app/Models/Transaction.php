@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\DisbursementService;
 use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Attributes\Scope;
@@ -78,12 +79,20 @@ class Transaction extends Model
     public function receiptData(): array
     {
         if ($this->receipt_snapshot !== null) {
-            return $this->receipt_snapshot;
+            $data = $this->receipt_snapshot;
+            if (! isset($data['channelLabel'])) {
+                $data['channelLabel'] = 'Tunai di Posko RT';
+            }
+            if (! isset($data['whatsappUrl']) && ! empty($data['residentPhone'])) {
+                $data['whatsappUrl'] = DisbursementService::generateWhatsAppUrl((string) $data['residentPhone'], $data);
+            }
+
+            return $data;
         }
 
         $this->loadMissing(['resident', 'officer', 'items.category']);
 
-        return [
+        $data = [
             'id' => $this->id, 'type' => $this->type,
             'residentName' => $this->resident?->full_name ?? '-',
             'residentPhone' => $this->resident?->phone_number ?? '',
@@ -98,7 +107,14 @@ class Transaction extends Model
             'notes' => $this->notes,
             'residentApprovedAt' => $this->resident_approved_at?->toIso8601String(),
             'date' => $this->created_at->timezone(config('app.business_timezone'))->translatedFormat('d F Y, H:i'),
+            'channelLabel' => 'Tunai di Posko RT',
         ];
+
+        if (! empty($data['residentPhone'])) {
+            $data['whatsappUrl'] = DisbursementService::generateWhatsAppUrl((string) $data['residentPhone'], $data);
+        }
+
+        return $data;
     }
 
     public function resident()

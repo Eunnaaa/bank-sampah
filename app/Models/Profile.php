@@ -91,9 +91,10 @@ class Profile extends Authenticatable
 
     public function getTotalWasteWeightKgAttribute(): float
     {
-        return (float) TransactionItem::whereHas('transaction', function ($q) {
-            $q->where('resident_id', $this->id)->where('type', 'deposit');
-        })->sum('weight');
+        return (float) TransactionItem::join('transactions', 'transactions.id', '=', 'transaction_items.transaction_id')
+            ->where('transactions.resident_id', $this->id)
+            ->where('transactions.type', 'deposit')
+            ->sum('transaction_items.weight');
     }
 
     public function getTotalCo2SavedKgAttribute(): float
@@ -116,29 +117,20 @@ class Profile extends Authenticatable
      */
     public function getCategoryBreakdownAttribute(): array
     {
-        $items = TransactionItem::with('category')
-            ->whereHas('transaction', function ($q) {
-                $q->where('resident_id', $this->id)->where('type', 'deposit');
-            })
-            ->get();
-
-        $grouped = [];
-        foreach ($items as $item) {
-            $catName = $item->category?->name ?? 'Komoditas Lainnya';
-            $unit = $item->category?->unit ?? 'kg';
-            if (! isset($grouped[$catName])) {
-                $grouped[$catName] = [
-                    'name' => $catName,
-                    'unit' => $unit,
-                    'weight' => 0.0,
-                    'subtotal' => 0,
-                ];
-            }
-            $grouped[$catName]['weight'] += (float) $item->weight;
-            $grouped[$catName]['subtotal'] += (int) $item->subtotal;
-        }
-
-        return array_values($grouped);
+        return TransactionItem::join('transactions', 'transactions.id', '=', 'transaction_items.transaction_id')
+            ->leftJoin('waste_categories', 'waste_categories.id', '=', 'transaction_items.category_id')
+            ->where('transactions.resident_id', $this->id)
+            ->where('transactions.type', 'deposit')
+            ->groupBy('waste_categories.name', 'waste_categories.unit')
+            ->selectRaw('COALESCE(waste_categories.name, ?) as name, COALESCE(waste_categories.unit, ?) as unit, SUM(transaction_items.weight) as weight, SUM(transaction_items.subtotal) as subtotal', ['Komoditas Lainnya', 'kg'])
+            ->get()
+            ->map(fn ($r): array => [
+                'name' => (string) $r->name,
+                'unit' => (string) $r->unit,
+                'weight' => (float) $r->weight,
+                'subtotal' => (int) $r->subtotal,
+            ])
+            ->all();
     }
 
     public static function normalizePhoneNumber(?string $phone): string

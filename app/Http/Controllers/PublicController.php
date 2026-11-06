@@ -20,7 +20,7 @@ class PublicController extends Controller
             ->inPeriod('month')
             ->sum('total_amount');
 
-        $totalWeightMonth = TransactionItem::whereHas('transaction', function ($q) {
+        $totalWeightMonth = (float) TransactionItem::whereHas('transaction', function ($q) {
             $q->where('type', 'deposit')->inPeriod('month');
         })->sum('weight');
 

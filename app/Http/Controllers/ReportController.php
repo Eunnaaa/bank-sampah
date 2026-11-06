@@ -21,16 +21,22 @@ class ReportController extends Controller
         $totalWithdrawal = (clone $query)->where('type', 'withdrawal')->sum('total_amount');
         $totalDepositCount = (clone $query)->where('type', 'deposit')->count();
 
-        // Rekapitulasi per komoditas
-        $categoriesSummary = WasteCategory::forTenant(auth()->user()->tenant_id)->get()->map(function ($cat) use ($query) {
-            $itemsQuery = TransactionItem::where('category_id', $cat->id)
-                ->whereIn('transaction_id', (clone $query)->select('transactions.id'));
+        // Rekapitulasi per komoditas (1 kueri terkelompok menggantikan 2N kueri)
+        $categories = WasteCategory::forTenant(auth()->user()->tenant_id)->get();
+        $itemsTotals = TransactionItem::whereIn('transaction_id', (clone $query)->select('transactions.id'))
+            ->groupBy('category_id')
+            ->selectRaw('category_id, sum(weight) as total_weight, sum(subtotal) as total_subtotal')
+            ->get()
+            ->keyBy('category_id');
+
+        $categoriesSummary = $categories->map(function ($cat) use ($itemsTotals) {
+            $item = $itemsTotals->get($cat->id);
 
             return [
                 'name' => $cat->name,
                 'unit' => $cat->unit,
-                'total_weight' => round($itemsQuery->sum('weight'), 2),
-                'total_subtotal' => $itemsQuery->sum('subtotal'),
+                'total_weight' => round((float) ($item?->total_weight ?? 0), 2),
+                'total_subtotal' => (int) ($item?->total_subtotal ?? 0),
             ];
         });
 
@@ -84,9 +90,16 @@ class ReportController extends Controller
             $this->writeCsvRow($file, ['Nama Komoditas', 'Satuan', 'Total Bobot/Volume', 'Total Nilai (Rp)']);
 
             $categories = WasteCategory::forTenant(auth()->user()->tenant_id)->get();
+            $itemsTotals = TransactionItem::whereIn('transaction_id', (clone $query)->select('transactions.id'))
+                ->groupBy('category_id')
+                ->selectRaw('category_id, sum(weight) as total_weight, sum(subtotal) as total_subtotal')
+                ->get()
+                ->keyBy('category_id');
+
             foreach ($categories as $cat) {
-                $weight = TransactionItem::where('category_id', $cat->id)->whereIn('transaction_id', (clone $query)->select('transactions.id'))->sum('weight');
-                $subtotal = TransactionItem::where('category_id', $cat->id)->whereIn('transaction_id', (clone $query)->select('transactions.id'))->sum('subtotal');
+                $item = $itemsTotals->get($cat->id);
+                $weight = (float) ($item?->total_weight ?? 0);
+                $subtotal = (int) ($item?->total_subtotal ?? 0);
                 $this->writeCsvRow($file, [$cat->name, $cat->unit, number_format($weight, 2, ',', '.'), $subtotal]);
             }
             fclose($file);

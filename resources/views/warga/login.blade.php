@@ -135,15 +135,7 @@
                 <span>Buka Dashboard Warga</span>
             </button>
 
-            <!-- Box Demo Credentials Warga -->
-            <div style="margin-top: 6px; padding: 12px 14px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; font-size: 0.8rem; color: #166534; text-align: left; line-height: 1.55; width: 100%;">
-                <strong>Akun Demo Nasabah:</strong><br>
-                • WhatsApp: <code>081999888777</code><br>
-                • PIN: <code>1234</code><br>
-                • Nasabah: <em>Keluarga Budi Santoso (Blok C No. 05)</em>
-            </div>
-
-            <a class="return-home-link" href="{{ route('home') }}" style="margin-top: 4px; justify-self: center; font-size: 13.5px;">
+            <a class="return-home-link" href="{{ route('home') }}" style="margin-top: 8px; justify-self: center; font-size: 13.5px;">
                 Kembali ke beranda utama
             </a>
         </form>

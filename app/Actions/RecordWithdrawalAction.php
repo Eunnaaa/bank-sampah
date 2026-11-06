@@ -5,6 +5,7 @@ namespace App\Actions;
 use App\Models\AuditLog;
 use App\Models\Profile;
 use App\Models\Transaction;
+use App\Services\DisbursementService;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -46,6 +47,14 @@ class RecordWithdrawalAction
                 throw new \InvalidArgumentException('Saldo tidak mencukupi. Saldo saat ini: Rp '.number_format($resident->balance, 0, ',', '.'));
             }
 
+            $channel = $approval['channel'] ?? 'tunai';
+            $channelLabel = $approval['channel_label'] ?? DisbursementService::formatChannelLabel(
+                $channel,
+                $approval['provider'] ?? null,
+                $approval['account_number'] ?? null,
+                $approval['account_holder'] ?? null
+            );
+
             $tx = Transaction::create([
                 'id' => Str::uuid(),
                 'resident_id' => $resident->id,
@@ -54,7 +63,7 @@ class RecordWithdrawalAction
                 'officer_id' => $adminId,
                 'type' => 'withdrawal',
                 'total_amount' => $amount,
-                'notes' => $notes ?: 'Pencairan saldo tabungan sampah',
+                'notes' => $notes ?: "Pencairan saldo tabungan sampah ({$channelLabel})",
                 'resident_approved_at' => $approval['approved_at'],
             ]);
 
@@ -62,7 +71,12 @@ class RecordWithdrawalAction
             $resident->save();
             $resident->decrement('balance', $amount);
             $tx->update(['balance_after' => $resident->balance]);
-            $tx->update(['receipt_snapshot' => $tx->receiptData()]);
+
+            $receipt = $tx->receiptData();
+            $receipt['channel'] = $channel;
+            $receipt['channelLabel'] = $channelLabel;
+            $receipt['whatsappUrl'] = DisbursementService::generateWhatsAppUrl($resident->phone_number, $receipt);
+            $tx->update(['receipt_snapshot' => $receipt]);
 
             AuditLog::create([
                 'id' => Str::uuid(),
@@ -72,7 +86,7 @@ class RecordWithdrawalAction
                 'action' => 'RECORD_WITHDRAWAL',
                 'target_type' => 'transaction',
                 'target_id' => $tx->id,
-                'details' => 'Pencairan saldo tunai Rp '.number_format($amount, 0, ',', '.').' (Sisa saldo: Rp '.number_format($resident->balance, 0, ',', '.').')',
+                'details' => "Pencairan saldo [{$channelLabel}] Rp ".number_format($amount, 0, ',', '.').' (Sisa saldo: Rp '.number_format($resident->balance, 0, ',', '.').')',
                 'ip_address' => request()->ip(),
             ]);
 
@@ -81,7 +95,7 @@ class RecordWithdrawalAction
                 'withdrawn_amount' => $amount,
                 'remaining_balance' => $resident->balance,
                 'replayed' => false,
-                'receipt' => $tx->receiptData(),
+                'receipt' => $receipt,
             ];
         });
     }

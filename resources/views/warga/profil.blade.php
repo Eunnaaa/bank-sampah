@@ -141,29 +141,118 @@
 
         <!-- Kolom Kanan: Pengaturan Akun & Formulir Ganti PIN -->
         <div style="display: flex; flex-direction: column; gap: 20px;">
-            <section class="warga-profile-card" aria-labelledby="withdrawal-title" style="background: #ffffff; border: 1px solid #dce6df; border-radius: 18px; padding: 22px;">
-                <h3 id="withdrawal-title">Persetujuan Penarikan Tunai</h3>
-                <p>Masukkan nominal yang ingin Anda cairkan dan konfirmasi PIN. Bagikan kode hanya kepada bendahara saat Anda menerima uang tunai.</p>
+            <section class="warga-profile-card" aria-labelledby="withdrawal-title" style="background: #ffffff; border: 1px solid #dce6df; border-radius: 18px; padding: 22px;" x-data="{ channel: '{{ old('channel', 'tunai') }}' }">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+                    <h3 id="withdrawal-title" style="margin: 0; font-size: 1.15rem; color: #10382d; font-weight: 700;">Persetujuan Penarikan Saldo</h3>
+                    <span style="background: #e8f5e9; color: #166534; font-size: 0.75rem; font-weight: 700; padding: 4px 10px; border-radius: 999px;">
+                        Saldo: Rp {{ number_format($resident->balance, 0, ',', '.') }}
+                    </span>
+                </div>
+                <p style="font-size: 0.88rem; color: #64748b; margin-top: 0; margin-bottom: 16px;">
+                    Pilih metode pencairan dana, tentukan nominal, dan verifikasi dengan PIN keamanan Anda. Kode otorisasi 12 digit akan terbit untuk diproses bendahara RT.
+                </p>
+
                 @if(session('withdrawal_code'))
-                    <div class="alert alert-success" role="status">
-                        <p>Anda menyetujui pencairan <strong>Rp {{ number_format(session('withdrawal_amount'), 0, ',', '.') }}</strong>.</p>
-                        <p>Kode: <strong>{{ session('withdrawal_code') }}</strong></p>
-                        <p>Berlaku 10 menit, sekali pakai. Kode baru membatalkan kode sebelumnya.</p>
+                    <div class="alert alert-success" role="status" style="border-left: 4px solid #16a34a; background: #f0fdf4; padding: 16px; border-radius: 12px; margin-bottom: 18px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                            <span style="font-weight: 700; color: #166534;">Otorisasi Berhasil Diterbitkan</span>
+                            <span style="background: #dcfce7; color: #15803d; font-size: 0.75rem; font-weight: 700; padding: 2px 8px; border-radius: 999px;">Aktif 10 Menit</span>
+                        </div>
+                        <p style="margin: 4px 0;">Anda menyetujui pencairan <strong>Rp {{ number_format(session('withdrawal_amount'), 0, ',', '.') }}</strong>.</p>
+                        @if(session('withdrawal_channel_label'))
+                            <p style="margin: 4px 0; color: #166534; font-size: 0.88rem;">Metode: <strong>{{ session('withdrawal_channel_label') }}</strong></p>
+                        @endif
+                        <div style="margin: 12px 0; background: #ffffff; border: 2px dashed #86efac; border-radius: 10px; padding: 12px; text-align: center;">
+                            <small style="color: #64748b; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: 4px;">Kode Otorisasi (Tunjukkan ke Pengurus)</small>
+                            <span style="font-family: monospace; font-size: 1.6rem; font-weight: 800; letter-spacing: 0.15em; color: #15803d; user-select: all;">{{ session('withdrawal_code') }}</span>
+                            <p style="margin: 4px 0 0; font-size: 0.8rem; color: #64748b;">Kode: <strong>{{ session('withdrawal_code') }}</strong></p>
+                        </div>
+                        <p style="margin: 0; font-size: 0.82rem; color: #15803d;">Berlaku 10 menit, sekali pakai. Kode baru membatalkan kode sebelumnya.</p>
                     </div>
                 @endif
+
                 <form action="{{ route('warga.withdrawals.authorize') }}" method="POST">
                     @csrf
+
+                    <!-- Pilihan Jalur Pencairan -->
+                    <div class="form-group" style="margin-bottom: 14px;">
+                        <label style="font-weight: 600; font-size: 0.88rem; margin-bottom: 8px; display: block; color: #10382d;">Metode Penyaluran Dana</label>
+                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;">
+                            <button type="button" 
+                                @click="channel = 'tunai'" 
+                                :style="channel === 'tunai' ? 'background: #173f35; color: #ffffff; border-color: #173f35; font-weight: 700;' : 'background: #f8fafc; color: #475569; border-color: #cbd5e1;'"
+                                style="border: 1px solid; border-radius: 10px; padding: 10px 6px; font-size: 0.82rem; cursor: pointer; text-align: center; transition: all 0.2s;">
+                                💵 Tunai Posko
+                            </button>
+                            <button type="button" 
+                                @click="channel = 'transfer_bank'" 
+                                :style="channel === 'transfer_bank' ? 'background: #173f35; color: #ffffff; border-color: #173f35; font-weight: 700;' : 'background: #f8fafc; color: #475569; border-color: #cbd5e1;'"
+                                style="border: 1px solid; border-radius: 10px; padding: 10px 6px; font-size: 0.82rem; cursor: pointer; text-align: center; transition: all 0.2s;">
+                                🏦 Transfer Bank
+                            </button>
+                            <button type="button" 
+                                @click="channel = 'ewallet'" 
+                                :style="channel === 'ewallet' ? 'background: #173f35; color: #ffffff; border-color: #173f35; font-weight: 700;' : 'background: #f8fafc; color: #475569; border-color: #cbd5e1;'"
+                                style="border: 1px solid; border-radius: 10px; padding: 10px 6px; font-size: 0.82rem; cursor: pointer; text-align: center; transition: all 0.2s;">
+                                📱 E-Wallet
+                            </button>
+                        </div>
+                        <input type="hidden" name="channel" :value="channel">
+                    </div>
+
+                    <!-- Input Detail Transfer Bank -->
+                    <div x-show="channel === 'transfer_bank'" x-cloak style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px; margin-bottom: 14px; display: flex; flex-direction: column; gap: 10px;">
+                        <div class="form-group">
+                            <label for="bank-provider" style="font-size: 0.82rem; font-weight: 600; color: #334155;">Pilih Bank Tujuan</label>
+                            <select id="bank-provider" name="provider" class="calc-input" :disabled="channel !== 'transfer_bank'" :required="channel === 'transfer_bank'">
+                                <option value="">-- Pilih Bank --</option>
+                                @foreach($banks ?? \App\Services\DisbursementService::BANKS as $code => $bankName)
+                                    <option value="{{ $code }}" {{ old('provider') === $code ? 'selected' : '' }}>{{ $bankName }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="bank-account-number" style="font-size: 0.82rem; font-weight: 600; color: #334155;">Nomor Rekening Bank</label>
+                            <input id="bank-account-number" type="text" name="account_number" class="calc-input" value="{{ old('account_number') }}" placeholder="Contoh: 1234567890" :disabled="channel !== 'transfer_bank'" :required="channel === 'transfer_bank'">
+                        </div>
+                        <div class="form-group">
+                            <label for="bank-account-holder" style="font-size: 0.82rem; font-weight: 600; color: #334155;">Nama Pemilik Rekening</label>
+                            <input id="bank-account-holder" type="text" name="account_holder" class="calc-input" value="{{ old('account_holder', $resident->full_name) }}" placeholder="Nama sesuai buku tabungan" :disabled="channel !== 'transfer_bank'" :required="channel === 'transfer_bank'">
+                        </div>
+                    </div>
+
+                    <!-- Input Detail E-Wallet -->
+                    <div x-show="channel === 'ewallet'" x-cloak style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px; margin-bottom: 14px; display: flex; flex-direction: column; gap: 10px;">
+                        <div class="form-group">
+                            <label for="ewallet-provider" style="font-size: 0.82rem; font-weight: 600; color: #334155;">Pilih Dompet Digital</label>
+                            <select id="ewallet-provider" name="provider" class="calc-input" :disabled="channel !== 'ewallet'" :required="channel === 'ewallet'">
+                                <option value="">-- Pilih E-Wallet --</option>
+                                @foreach($ewallets ?? \App\Services\DisbursementService::EWALLETS as $code => $walletName)
+                                    <option value="{{ $code }}" {{ old('provider') === $code ? 'selected' : '' }}>{{ $walletName }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="ewallet-account-number" style="font-size: 0.82rem; font-weight: 600; color: #334155;">Nomor HP / Akun E-Wallet</label>
+                            <input id="ewallet-account-number" type="text" name="account_number" class="calc-input" value="{{ old('account_number', $resident->phone_number) }}" placeholder="Contoh: 081234567890" :disabled="channel !== 'ewallet'" :required="channel === 'ewallet'">
+                        </div>
+                        <div class="form-group">
+                            <label for="ewallet-account-holder" style="font-size: 0.82rem; font-weight: 600; color: #334155;">Nama Pemilik Akun E-Wallet</label>
+                            <input id="ewallet-account-holder" type="text" name="account_holder" class="calc-input" value="{{ old('account_holder', $resident->full_name) }}" placeholder="Nama sesuai akun e-wallet" :disabled="channel !== 'ewallet'" :required="channel === 'ewallet'">
+                        </div>
+                    </div>
+
                     <div class="form-group">
                         <label for="withdrawal-amount">Nominal Penarikan (Rp)</label>
-                        <input id="withdrawal-amount" type="number" name="amount" class="calc-input" min="1" max="{{ $resident->balance }}" step="1" required>
-                        @error('amount')<p role="alert">{{ $message }}</p>@enderror
+                        <input id="withdrawal-amount" type="number" name="amount" class="calc-input" min="1" max="{{ $resident->balance }}" step="1" placeholder="Maks. {{ number_format($resident->balance, 0, ',', '.') }}" required>
+                        @error('amount')<p role="alert" style="color: #dc2626; font-size: 0.82rem; margin-top: 4px;">{{ $message }}</p>@enderror
                     </div>
                     <div class="form-group" style="margin-top: 12px;">
-                        <label for="withdrawal-pin">Konfirmasi PIN Anda</label>
-                        <input id="withdrawal-pin" type="password" name="current_pin" class="calc-input" inputmode="numeric" pattern="[0-9]{4}" minlength="4" maxlength="4" autocomplete="off" required>
-                        @error('current_pin')<p role="alert">{{ $message }}</p>@enderror
+                        <label for="withdrawal-pin">Konfirmasi PIN 4-Digit Anda</label>
+                        <input id="withdrawal-pin" type="password" name="current_pin" class="calc-input" inputmode="numeric" pattern="[0-9]{4}" minlength="4" maxlength="4" placeholder="••••" autocomplete="off" required>
+                        @error('current_pin')<p role="alert" style="color: #dc2626; font-size: 0.82rem; margin-top: 4px;">{{ $message }}</p>@enderror
                     </div>
-                    <button type="submit" class="primary-button" style="margin-top: 16px;">Setujui Nominal &amp; Buat Kode</button>
+                    <button type="submit" class="primary-button" style="margin-top: 16px; width: 100%;">Setujui Nominal &amp; Buat Kode</button>
                 </form>
             </section>
 

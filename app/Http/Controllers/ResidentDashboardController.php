@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\AuditLog;
 use App\Models\Profile;
 use App\Models\WasteCategory;
+use App\Services\DisbursementService;
 use App\Services\QrCodeService;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
@@ -50,50 +51,56 @@ class ResidentDashboardController extends Controller
 
         $qrCodeSvg = QrCodeService::generateSvg("BS:{$resident->phone_number}", 5, '#173f35', '#ffffff');
 
-        // Peringkat Warga di Lingkungan RT
-        $rankQuery = Profile::forTenant($resident->tenant_id)->where('role', 'resident')
-            ->orderByDesc('balance')
-            ->pluck('id')
-            ->toArray();
-        $rank = array_search($resident->id, $rankQuery);
-        $residentRank = ($rank !== false) ? $rank + 1 : 1;
-        $totalResidents = count($rankQuery);
+        // Peringkat Warga di Lingkungan RT (kueri kalkulasi langsung tanpa memuat array seluruh id)
+        $residentRank = Profile::forTenant($resident->tenant_id)->where('role', 'resident')
+            ->where('balance', '>', $resident->balance)
+            ->count() + 1;
+        $totalResidents = Profile::forTenant($resident->tenant_id)->where('role', 'resident')
+            ->count();
 
-        // Tren Penimbangan 7 Hari Terakhir Nasabah
-        $chartDays = collect(range(6, 0))->map(function ($daysAgo) use ($resident) {
-            $day = Carbon::now(config('app.business_timezone'))->subDays($daysAgo);
+        // Tren Penimbangan 7 Hari Terakhir Nasabah (2 kueri berindeks)
+        $timezone = config('app.business_timezone');
+        $now = Carbon::now($timezone);
+        $start7Days = $now->copy()->subDays(6)->startOfDay();
+
+        $weekDeposits = $resident->transactions()
+            ->where('type', 'deposit')
+            ->where('created_at', '>=', $start7Days->utc())
+            ->with(['items' => fn ($q) => $q->select('transaction_id', 'weight')])
+            ->get(['id', 'total_amount', 'created_at']);
+
+        $dailyWeights = [];
+        foreach ($weekDeposits as $tx) {
+            $dayKey = $tx->created_at->timezone($timezone)->format('Y-m-d');
+            $dailyWeights[$dayKey] = ($dailyWeights[$dayKey] ?? 0.0) + (float) $tx->items->sum('weight');
+        }
+
+        $chartDays = collect(range(6, 0))->map(function ($daysAgo) use ($now, $dailyWeights) {
+            $day = $now->copy()->subDays($daysAgo);
             $date = $day->format('Y-m-d');
             $label = $day->translatedFormat('D, d/m');
-
-            $weight = (float) $resident->transactions()
-                ->where('type', 'deposit')
-                ->onLocalDay($day)
-                ->join('transaction_items', 'transactions.id', '=', 'transaction_items.transaction_id')
-                ->sum('transaction_items.weight');
 
             return [
                 'date' => $date,
                 'label' => $label,
-                'weight' => round($weight, 1),
+                'weight' => round($dailyWeights[$date] ?? 0.0, 1),
             ];
         });
 
-        // Arus Kas Tabungan Keluarga
-        $totalDepositAmount = (int) $resident->transactions()
-            ->where('type', 'deposit')
-            ->sum('total_amount');
+        // Arus Kas Tabungan Keluarga (1 kueri agregasi)
+        $cashflow = $resident->transactions()
+            ->selectRaw("
+                coalesce(sum(case when type = 'deposit' then total_amount else 0 end), 0) as deposit_amount,
+                coalesce(sum(case when type = 'withdrawal' then total_amount else 0 end), 0) as withdrawal_amount,
+                count(case when type = 'deposit' then 1 end) as deposit_count,
+                count(case when type = 'withdrawal' then 1 end) as withdrawal_count
+            ")
+            ->first();
 
-        $totalWithdrawalAmount = (int) $resident->transactions()
-            ->where('type', 'withdrawal')
-            ->sum('total_amount');
-
-        $totalDepositCount = (int) $resident->transactions()
-            ->where('type', 'deposit')
-            ->count();
-
-        $totalWithdrawalCount = (int) $resident->transactions()
-            ->where('type', 'withdrawal')
-            ->count();
+        $totalDepositAmount = (int) ($cashflow->deposit_amount ?? 0);
+        $totalWithdrawalAmount = (int) ($cashflow->withdrawal_amount ?? 0);
+        $totalDepositCount = (int) ($cashflow->deposit_count ?? 0);
+        $totalWithdrawalCount = (int) ($cashflow->withdrawal_count ?? 0);
 
         // Komoditas Aktif & Harga Terkini
         $activeCategories = WasteCategory::forTenant($resident->tenant_id)->where('is_active', true)
@@ -216,6 +223,9 @@ class ResidentDashboardController extends Controller
             'qrCodeSvg' => $qrCodeSvg,
             'qrPayload' => json_encode($qrData, JSON_UNESCAPED_SLASHES),
             'qrData' => $qrData,
+            'channels' => DisbursementService::CHANNELS,
+            'banks' => DisbursementService::BANKS,
+            'ewallets' => DisbursementService::EWALLETS,
         ]);
     }
 
@@ -224,9 +234,20 @@ class ResidentDashboardController extends Controller
         $validated = $request->validate([
             'amount' => 'required|integer|min:1',
             'current_pin' => 'required|digits:4',
+            'channel' => 'nullable|in:tunai,transfer_bank,ewallet',
+            'provider' => 'nullable|required_if:channel,transfer_bank,ewallet|string|max:50',
+            'account_number' => 'nullable|required_if:channel,transfer_bank,ewallet|string|max:50',
+            'account_holder' => 'nullable|required_if:channel,transfer_bank,ewallet|string|max:100',
         ]);
 
-        $code = DB::transaction(function () use ($request, $validated): string {
+        $channel = $validated['channel'] ?? 'tunai';
+        $provider = $validated['provider'] ?? null;
+        $accountNumber = $validated['account_number'] ?? null;
+        $accountHolder = $validated['account_holder'] ?? null;
+
+        $channelLabel = DisbursementService::formatChannelLabel($channel, $provider, $accountNumber, $accountHolder);
+
+        $code = DB::transaction(function () use ($request, $validated, $channel, $provider, $accountNumber, $accountHolder, $channelLabel): string {
             $resident = Profile::where('role', 'resident')->lockForUpdate()->findOrFail($this->getResident($request)->id);
             if (! $resident->pin_hash || ! Hash::check($validated['current_pin'], $resident->pin_hash)) {
                 throw ValidationException::withMessages(['current_pin' => 'PIN saat ini tidak sesuai.']);
@@ -237,23 +258,37 @@ class ResidentDashboardController extends Controller
 
             $code = strtoupper(Str::random(12));
             $resident->withdrawal_approval = [
-                'code_hash' => hash('sha256', $code), 'amount' => (int) $validated['amount'],
-                'approved_at' => now()->toIso8601String(), 'expires_at' => now()->addMinutes(10)->toIso8601String(),
+                'code_hash' => hash('sha256', $code),
+                'amount' => (int) $validated['amount'],
+                'channel' => $channel,
+                'provider' => $provider,
+                'account_number' => $accountNumber,
+                'account_holder' => $accountHolder,
+                'channel_label' => $channelLabel,
+                'approved_at' => now()->toIso8601String(),
+                'expires_at' => now()->addMinutes(10)->toIso8601String(),
             ];
             $resident->save();
 
             AuditLog::create([
-                'actor_id' => $resident->id, 'tenant_id' => $resident->tenant_id,
-                'actor_name' => $resident->full_name, 'action' => 'AUTHORIZE_WITHDRAWAL',
-                'target_type' => 'profile', 'target_id' => $resident->id,
-                'details' => 'Warga menyetujui pencairan Rp '.number_format((int) $validated['amount'], 0, ',', '.').' dengan kode sekali pakai berlaku 10 menit.',
+                'actor_id' => $resident->id,
+                'tenant_id' => $resident->tenant_id,
+                'actor_name' => $resident->full_name,
+                'action' => 'AUTHORIZE_WITHDRAWAL',
+                'target_type' => 'profile',
+                'target_id' => $resident->id,
+                'details' => 'Warga menyetujui pencairan Rp '.number_format((int) $validated['amount'], 0, ',', '.')." via {$channelLabel} dengan kode sekali pakai berlaku 10 menit.",
                 'ip_address' => $request->ip(),
             ]);
 
             return $code;
         });
 
-        return back()->with('withdrawal_code', $code)->with('withdrawal_amount', (int) $validated['amount']);
+        return back()
+            ->with('withdrawal_code', $code)
+            ->with('withdrawal_amount', (int) $validated['amount'])
+            ->with('withdrawal_channel_label', $channelLabel)
+            ->with('withdrawal_channel', $channel);
     }
 
     public function changePin(Request $request): RedirectResponse

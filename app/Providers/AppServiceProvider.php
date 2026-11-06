@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Models\Profile;
 use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\Gate;
@@ -25,6 +26,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        Model::preventLazyLoading(! $this->app->isProduction());
+
         Paginator::useBootstrapFive();
 
         RateLimiter::for('credentials', function (Request $request): array {

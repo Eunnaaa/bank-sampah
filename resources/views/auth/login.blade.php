@@ -223,30 +223,6 @@
                     <span>Masuk</span>
                 </button>
 
-                @if(app()->environment('local'))
-                <!-- Kredensial Demo Akun (Minimalist & Collapsible) -->
-                <details class="auth-demo-details">
-                    <summary class="auth-demo-summary">
-                        <span style="display: inline-flex; align-items: center; gap: 6px;">
-                            <x-icon name="help-circle" size="14" />
-                            <span>Akun Demo (RT / Petugas / Warga)</span>
-                        </span>
-                        <x-icon name="chevron-down" size="14" />
-                    </summary>
-                    <div class="auth-demo-body">
-                        <div class="auth-demo-row">
-                            <strong>RT:</strong> <code>081234567890</code> <span>(sandi: <code>admin123456</code>)</span>
-                        </div>
-                        <div class="auth-demo-row">
-                            <strong>Petugas:</strong> <code>081298765432</code> <span>(sandi: <code>petugas123456</code>)</span>
-                        </div>
-                        <div class="auth-demo-row">
-                            <strong>Warga:</strong> <code>081999888777</code> <span>(PIN: <code>1234</code>)</span>
-                        </div>
-                    </div>
-                </details>
-                @endif
-
                 <div class="auth-switch-link">
                     Belum punya akun?
                     <a href="{{ route('register') }}">

@@ -239,9 +239,10 @@ class ResidentController extends Controller
             );
 
             $request->session()->forget(['success', 'info']);
+            $channelLabel = $result['receipt']['channelLabel'] ?? 'Tunai di Posko RT';
             $message = $result['replayed']
-                ? 'Transaksi '.$result['transaction_id'].' sudah diproses sebelumnya. Jangan serahkan uang tunai lagi.'
-                : 'Pencairan Rp '.number_format($result['withdrawn_amount'], 0, ',', '.').' berhasil dicatat. ID transaksi: '.$result['transaction_id'].'. Serahkan uang tunai hanya sekali sesuai bukti ini.';
+                ? 'Transaksi '.$result['transaction_id'].' sudah diproses sebelumnya. Jangan lakukan penyaluran dana lagi.'
+                : 'Pencairan Rp '.number_format($result['withdrawn_amount'], 0, ',', '.')." ({$channelLabel}) berhasil dicatat. ID transaksi: ".$result['transaction_id'].'. Selesaikan penyaluran dana sesuai metode yang disetujui.';
 
             return back()->with($result['replayed'] ? 'info' : 'success', $message)
                 ->with('withdrawal_receipt', $result['receipt']);

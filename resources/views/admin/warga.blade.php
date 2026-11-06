@@ -296,22 +296,38 @@
     </div>
 
     @if(session('withdrawal_receipt'))
-        <section class="alert alert-success" aria-label="Bukti pencairan tunai">
-            <h3>Bukti Pencairan Tunai</h3>
-            <p>ID transaksi: <strong>{{ session('withdrawal_receipt.id') }}</strong></p>
-            <p>Nasabah: {{ session('withdrawal_receipt.residentName') }} · Rp {{ number_format(session('withdrawal_receipt.totalAmount'), 0, ',', '.') }}</p>
-            <p>Sisa saldo: Rp {{ number_format(session('withdrawal_receipt.newBalance'), 0, ',', '.') }}</p>
-            <p>Persetujuan warga: {{ \Carbon\CarbonImmutable::parse(session('withdrawal_receipt.residentApprovedAt'))->timezone(config('app.business_timezone'))->translatedFormat('d F Y, H:i') }}</p>
-            <p>Dicatat: {{ session('withdrawal_receipt.date') }} · Oleh {{ session('withdrawal_receipt.officerName') }}</p>
-            <p>Satu ID transaksi hanya untuk satu penyerahan uang tunai. Cocokkan identitas penerima dan bukti ini.</p>
+        <section class="alert alert-success" aria-label="Bukti pencairan tunai" style="background: #f0fdf4; border-left: 4px solid #16a34a; padding: 18px; border-radius: 12px; margin-bottom: 24px;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 14px;">
+                <div>
+                    <h3 style="margin: 0 0 8px; color: #166534; font-size: 1.15rem; font-weight: 700;">Bukti Pencairan Tunai</h3>
+                    <p style="margin: 4px 0;">ID transaksi: <strong>{{ session('withdrawal_receipt.id') }}</strong></p>
+                    <p style="margin: 4px 0;">Nasabah: {{ session('withdrawal_receipt.residentName') }} · Rp {{ number_format(session('withdrawal_receipt.totalAmount'), 0, ',', '.') }}</p>
+                    <p style="margin: 4px 0;">Metode Penyaluran: <strong>{{ session('withdrawal_receipt.channelLabel', 'Tunai di Posko RT') }}</strong></p>
+                    <p style="margin: 4px 0;">Sisa saldo: Rp {{ number_format(session('withdrawal_receipt.newBalance'), 0, ',', '.') }}</p>
+                    <p style="margin: 4px 0;">Persetujuan warga: {{ \Carbon\CarbonImmutable::parse(session('withdrawal_receipt.residentApprovedAt'))->timezone(config('app.business_timezone'))->translatedFormat('d F Y, H:i') }}</p>
+                    <p style="margin: 4px 0;">Dicatat: {{ session('withdrawal_receipt.date') }} · Oleh {{ session('withdrawal_receipt.officerName') }}</p>
+                    <p style="margin: 6px 0 0; font-size: 0.85rem; color: #15803d;">Satu ID transaksi hanya untuk satu penyerahan uang tunai atau penyaluran dana. Cocokkan identitas penerima dan bukti ini.</p>
+                </div>
+
+                @if(!empty(session('withdrawal_receipt.whatsappUrl')))
+                    <div style="align-self: center;">
+                        <a href="{{ session('withdrawal_receipt.whatsappUrl') }}" target="_blank" rel="noopener noreferrer" class="primary-button" style="display: inline-flex; align-items: center; gap: 8px; background: #25d366; border-color: #25d366; color: #ffffff; text-decoration: none; padding: 10px 18px; border-radius: 10px; font-weight: 700; box-shadow: 0 4px 12px rgba(37, 211, 102, 0.25);">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/>
+                            </svg>
+                            Kirim Bukti via WhatsApp
+                        </a>
+                    </div>
+                @endif
+            </div>
         </section>
     @endif
 
-    <!-- Modal Pencairan Saldo Tunai -->
+    <!-- Modal Pencairan Saldo -->
     <div class="overlay modal-overlay" x-show="showWithdrawModal" style="display: none;" x-cloak>
         <div class="modal-card">
             <div class="modal-head">
-                <h3>Pencairan Saldo Tabungan Tunai</h3>
+                <h3>Pencairan Saldo Tabungan Warga</h3>
                 <button type="button" class="modal-close" @click="showWithdrawModal = false">&times;</button>
             </div>
             <form action="{{ route('admin.residents.withdraw') }}" method="POST" @submit="if (withdrawSubmitting) { $event.preventDefault(); } else { withdrawSubmitting = true; }">
@@ -323,7 +339,7 @@
                     <strong>Saldo Saat Ini:</strong> <span style="font-weight: 700; color: #1b5e20;" x-text="'Rp ' + Number(selectedResident?.balance || 0).toLocaleString('id-ID')"></span>
                 </div>
                 <div class="form-group">
-                    <label>Nominal Penarikan Tunai (Rp)</label>
+                    <label>Nominal Pencairan (Rp)</label>
                     <input
                         type="number"
                         name="amount"
@@ -338,7 +354,7 @@
                 <div class="form-group" style="margin-top: 10px;">
                     <label for="withdrawal-authorization">Kode Persetujuan Warga</label>
                     <input id="withdrawal-authorization" type="text" name="authorization_code" class="calc-input" minlength="12" maxlength="12" autocomplete="off" aria-describedby="withdrawal-help" required>
-                    <p id="withdrawal-help">Warga membuat kode di menu Profil untuk nominal ini. Berlaku 10 menit dan hanya sekali pakai. Verifikasi identitas penerima sebelum menyerahkan uang.</p>
+                    <p id="withdrawal-help">Warga membuat kode di menu Profil sesuai metode yang dipilih (Tunai, Transfer Bank, atau E-Wallet). Berlaku 10 menit, sekali pakai. Verifikasi data penerima sebelum memproses.</p>
                 </div>
                 <div class="form-group" style="margin-top: 10px;">
                     <label for="withdrawal-password">Konfirmasi Kata Sandi Admin</label>
@@ -350,7 +366,7 @@
                 </div>
                 <div class="modal-actions" style="margin-top: 20px; display: flex; gap: 10px; justify-content: flex-end;">
                     <button type="button" class="secondary-button" @click="showWithdrawModal = false">Batal</button>
-                    <button type="submit" class="primary-button" :disabled="withdrawSubmitting" style="background: #c62828; border-color: #c62828;">Konfirmasi Tarik Tunai</button>
+                    <button type="submit" class="primary-button" :disabled="withdrawSubmitting" style="background: #c62828; border-color: #c62828;">Konfirmasi Pencairan Saldo</button>
                 </div>
             </form>
         </div>

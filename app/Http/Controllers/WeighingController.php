@@ -14,8 +14,16 @@ class WeighingController extends Controller
 {
     public function index()
     {
-        $residents = Profile::forTenant(auth()->user()->tenant_id)->where('role', 'resident')->orderBy('full_name')->get();
-        $categories = WasteCategory::forTenant(auth()->user()->tenant_id)->where('is_active', true)->orderBy('name')->get();
+        $residents = Profile::forTenant(auth()->user()->tenant_id)
+            ->where('role', 'resident')
+            ->select('id', 'full_name', 'phone_number', 'rt', 'rw', 'house_number')
+            ->orderBy('full_name')
+            ->get();
+        $categories = WasteCategory::forTenant(auth()->user()->tenant_id)
+            ->where('is_active', true)
+            ->select('id', 'name', 'unit', 'price_per_unit')
+            ->orderBy('name')
+            ->get();
 
         return view('admin.timbang', compact('residents', 'categories'));
     }
