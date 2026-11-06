@@ -2729,20 +2729,16 @@ td { padding-top: 12px; padding-bottom: 12px; font-size: 13.5px; }
   position: relative;
   overflow: hidden;
   color: white;
-  background: linear-gradient(125deg, #10382d 0%, #164938 55%, #277056 100%);
-  padding: 56px 28px 72px;
+  background: linear-gradient(119deg, #10382d 0%, #174d3d 58%, #2c765c 100%);
+  padding: 0 0 32px;
 }
 
-.warga-hero::after {
-  position: absolute;
-  right: -60px;
-  top: -80px;
-  width: 380px;
-  height: 380px;
-  content: '';
-  background: radial-gradient(circle, rgba(201, 236, 114, 0.15) 0%, transparent 70%);
-  border-radius: 50%;
-  pointer-events: none;
+.warga-hero.public-hero::after {
+  display: none;
+}
+
+.warga-hero .public-hero-inner {
+  padding-bottom: 74px;
 }
 
 .warga-hero-inner {
@@ -3039,7 +3035,10 @@ td { padding-top: 12px; padding-bottom: 12px; font-size: 13.5px; }
 
 @media (max-width: 640px) {
   .warga-hero {
-    padding: 38px 18px 52px;
+    padding: 0 0 16px;
+  }
+  .warga-hero .public-hero-inner {
+    padding: 38px 18px 48px;
   }
   .steps-section {
     margin-top: -24px;

@@ -34,13 +34,13 @@
                     </span>
                 </div>
 
-                <div style="display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 12px 14px; background: rgba(255,255,255,0.06); border-radius: 12px; border: 1px solid rgba(255,255,255,0.1);">
+                <div style="display: flex; align-items: center; gap: 12px; padding: 12px 14px; background: rgba(255,255,255,0.06); border-radius: 12px; border: 1px solid rgba(255,255,255,0.1);">
                     <div style="display: grid; place-items: center; width: 40px; height: 40px; border-radius: 10px; background: rgba(201,236,114,0.18); color: var(--lime); flex-shrink: 0;">
                         <x-icon name="camera" size="20" />
                     </div>
                     <div>
                         <strong style="display: block; font-size: 13.5px; color: #ffffff;">Kartu Digital Siap Scan</strong>
-                        <span style="display: block; font-size: 12px; color: #b7cbbf;">QR Code otomatis terbit setelah pendaftaran.</span>
+                        <span style="display: block; font-size: 12px; color: #b7cbbf; margin-top: 2px;">QR Code otomatis terbit setelah pendaftaran.</span>
                     </div>
                 </div>
 

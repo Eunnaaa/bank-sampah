@@ -3,11 +3,64 @@
 @section('content')
 <main class="warga-page">
     <!-- Hero Banner Portal Warga -->
-    <section class="warga-hero">
-        <div class="warga-hero-inner">
-            <span class="section-label">PORTAL LINGKUNGAN RT</span>
-            <h1>Direktori Warga &amp;<br><em>Edukasi Pemilahan.</em></h1>
-            <p>Panduan praktis pemilahan sampah dari rumah dan daftar warga yang telah terdaftar sebagai nasabah aktif bank sampah RT 05 / RW 08.</p>
+    <section class="public-hero warga-hero">
+        <div class="hero-orbit orbit-one"></div>
+        <div class="hero-orbit orbit-two"></div>
+        <div class="public-hero-inner">
+            <div class="hero-copy">
+                <div class="public-eyebrow">
+                    <span><x-icon name="recycle" size="16" /></span> Portal Lingkungan RT
+                </div>
+                <h1>Direktori Warga &amp;<br><em>Edukasi Pemilahan.</em></h1>
+                <p>Panduan praktis pemilahan sampah dari rumah dan daftar warga yang telah terdaftar sebagai nasabah aktif bank sampah RT 05 / RW 08.</p>
+                <div class="hero-cta-row">
+                    @if(session('resident_id') || (auth()->check() && auth()->user()->role === 'resident'))
+                        <a class="public-primary-cta" href="{{ route('warga.dashboard') }}">
+                            <span><x-icon name="credit-card" size="18" /></span> Dashboard Saldo Warga <span>→</span>
+                        </a>
+                    @elseif(auth()->check() && in_array(auth()->user()->role, ['admin', 'officer']))
+                        <a class="public-primary-cta" href="{{ route('admin.dashboard') }}">
+                            <span><x-icon name="shield" size="18" /></span> Panel Pengurus <span>→</span>
+                        </a>
+                    @else
+                        <a class="public-primary-cta" href="{{ route('login') }}">
+                            <span><x-icon name="credit-card" size="18" /></span> Masuk Akun Warga <span>→</span>
+                        </a>
+                        <a class="public-text-cta" href="{{ route('register') }}">Daftar nasabah baru <span>→</span></a>
+                    @endif
+                </div>
+                <div class="trust-row">
+                    <span><x-icon name="shield" size="16" /> 4 Langkah Edukasi</span>
+                    <span><x-icon name="scale" size="16" /> Penimbangan Terbuka</span>
+                </div>
+            </div>
+
+            <div class="hero-visual" aria-hidden="true">
+                <div class="visual-disc disc-a"></div>
+                <div class="visual-disc disc-b"></div>
+                <div class="hero-card hero-card-main">
+                    <div class="card-top">
+                        <span class="card-leaf"><x-icon name="users" size="16" /></span>
+                        <span>Komunitas Warga</span>
+                        <i></i>
+                    </div>
+                    <strong>RT 05 / RW 08</strong>
+                    <small>Gerakan Pemilahan Sampah Mandiri</small>
+                    <div class="card-spark"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+                </div>
+                <div class="hero-card hero-card-float">
+                    <span><x-icon name="scale" size="20" /></span>
+                    <div>
+                        <strong>Pos Penimbangan</strong>
+                        <small>Rutin Setiap Akhir Pekan</small>
+                    </div>
+                </div>
+                <div class="hero-stamp" aria-label="Status warga aktif pilah">
+                    <span>WARGA</span>
+                    <strong>AKTIF</strong>
+                    <small>PILAH</small>
+                </div>
+            </div>
         </div>
     </section>
 
