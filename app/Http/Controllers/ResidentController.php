@@ -60,6 +60,7 @@ class ResidentController extends Controller
                 'rt' => 'required|string|max:10',
                 'rw' => 'required|string|max:10',
                 'house_number' => 'required|string|max:50',
+                'savings_type' => 'nullable|string|in:regular,eid,charity',
             ]);
 
             $tenantId = auth()->user()->tenant_id;
@@ -73,6 +74,7 @@ class ResidentController extends Controller
                 'rw' => $request->rw,
                 'house_number' => $request->house_number,
                 'role' => 'resident',
+                'savings_type' => $request->input('savings_type', 'regular'),
                 'balance' => 0,
                 'pin_hash' => $pin ? Hash::make($pin) : null,
             ]);
@@ -118,6 +120,7 @@ class ResidentController extends Controller
                 'rt' => 'required|string|max:10',
                 'rw' => 'required|string|max:10',
                 'house_number' => 'required|string|max:50',
+                'savings_type' => 'nullable|string|in:regular,eid,charity',
             ]);
 
             $oldName = $resident->full_name;

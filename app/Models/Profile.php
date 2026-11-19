@@ -23,7 +23,7 @@ class Profile extends Authenticatable
 
     protected $fillable = [
         'tenant_id', 'full_name', 'phone_number', 'rt', 'rw',
-        'house_number', 'role', 'balance', 'password_hash', 'pin_hash', 'activation_token_hash', 'activation_expires_at',
+        'house_number', 'role', 'savings_type', 'balance', 'password_hash', 'pin_hash', 'activation_token_hash', 'activation_expires_at',
     ];
 
     protected $hidden = [
@@ -52,6 +52,15 @@ class Profile extends Authenticatable
         ]);
 
         return $token;
+    }
+
+    public function getSavingsTypeLabelAttribute(): string
+    {
+        return match ($this->savings_type) {
+            'eid' => 'Tabungan Hari Raya',
+            'charity' => 'Minat Sedekah Sampah (saldo warga)',
+            default => 'Tabungan Reguler',
+        };
     }
 
     public function getAuthPassword()

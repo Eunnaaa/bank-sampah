@@ -11,6 +11,11 @@ class Tenant extends Model
 
     protected $fillable = [
         'code', 'name', 'rt', 'rw', 'subdistrict', 'district', 'city', 'status',
+        'collection_schedule', 'next_collection_date', 'collection_note',
+    ];
+
+    protected $casts = [
+        'next_collection_date' => 'date',
     ];
 
     public function profiles()

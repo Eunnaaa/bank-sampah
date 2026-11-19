@@ -4,17 +4,27 @@ namespace App\Http\Controllers;
 
 use App\Models\AuditLog;
 use App\Models\Profile;
+use App\Models\Tenant;
 use App\Models\Transaction;
 use App\Models\TransactionItem;
 use App\Models\WasteCategory;
+use App\Services\InventoryService;
 use Carbon\Carbon;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 class AdminDashboardController extends Controller
 {
+    public function __construct(
+        protected InventoryService $inventoryService
+    ) {}
+
     public function index(Request $request)
     {
         $tenantId = auth()->user()->tenant_id;
+        $tenant = Tenant::find($tenantId);
+        $inventoryMetrics = $this->inventoryService->getInventoryMetrics($this->inventoryService->getInventorySummary($tenantId));
 
         $residentStats = Profile::forTenant($tenantId)->where('role', 'resident')
             ->selectRaw('count(*) as count, coalesce(sum(balance), 0) as balance, count(pin_hash) as activated_pins')
@@ -128,7 +138,37 @@ class AdminDashboardController extends Controller
             'officersCount',
             'recentAuditLogs',
             'recentTransactions',
-            'chartDays'
+            'chartDays',
+            'inventoryMetrics',
+            'tenant'
         ));
+    }
+
+    public function updateSchedule(Request $request): RedirectResponse
+    {
+        $tenantId = auth()->user()->tenant_id;
+        $tenant = Tenant::findOrFail($tenantId);
+
+        $validated = $request->validate([
+            'collection_schedule' => ['nullable', 'string', 'max:255'],
+            'next_collection_date' => ['nullable', 'date'],
+            'collection_note' => ['nullable', 'string', 'max:500'],
+        ]);
+
+        $tenant->update($validated);
+
+        AuditLog::create([
+            'id' => Str::uuid(),
+            'actor_id' => auth()->id(),
+            'tenant_id' => $tenantId,
+            'actor_name' => auth()->user()?->full_name ?? 'Pengurus RT',
+            'action' => 'UPDATE_SCHEDULE',
+            'target_type' => 'tenant',
+            'target_id' => $tenant->id,
+            'details' => 'Memperbarui jadwal operasional penimbangan: '.($validated['collection_schedule'] ?? 'Dikosongkan').' (Tanggal: '.($validated['next_collection_date'] ?? '-').')',
+            'ip_address' => $request->ip(),
+        ]);
+
+        return back()->with('success', 'Jadwal operasional penimbangan berhasil diperbarui!');
     }
 }

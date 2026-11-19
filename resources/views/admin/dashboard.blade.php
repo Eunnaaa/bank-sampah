@@ -70,6 +70,62 @@
         </div>
     </div>
 
+    <!-- Banner Jadwal Operasional Posko Timbang RT -->
+    <div style="background: #ffffff; border: 1.5px solid #e2e8f0; border-radius: 14px; padding: 16px 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.02);" x-data="{ showEditSchedule: false }">
+        <div style="display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap;">
+            <div style="display: flex; align-items: center; gap: 14px;">
+                <span style="width: 42px; height: 42px; border-radius: 12px; background: #ecfdf5; color: #059669; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                    <x-icon name="clock" size="20" />
+                </span>
+                <div>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <strong style="color: #173f35; font-size: 14.5px;">Jadwal Penimbangan Posko RT</strong>
+                        @if($tenant?->next_collection_date)
+                            <span style="background: #dcfce7; color: #15803d; font-size: 11px; font-weight: 800; padding: 2px 8px; border-radius: 6px;">
+                                Buka: {{ $tenant->next_collection_date->translatedFormat('d M Y') }}
+                            </span>
+                        @endif
+                    </div>
+                    <span style="color: #64748b; font-size: 13px;">
+                        {{ $tenant?->collection_schedule ?: 'Belum diatur (Contoh: Setiap Minggu ke-1 & ke-3)' }}
+                        {{ $tenant?->collection_note ? '· '.$tenant->collection_note : '' }}
+                    </span>
+                </div>
+            </div>
+            @can('admin-only')
+            <button type="button" @click="showEditSchedule = !showEditSchedule" class="secondary-button" style="padding: 6px 14px; font-size: 12.5px; display: inline-flex; align-items: center; gap: 6px; cursor: pointer;">
+                <x-icon name="edit" size="14" />
+                <span x-text="showEditSchedule ? 'Tutup Pengaturan' : 'Atur Jadwal Operasional'"></span>
+            </button>
+            @endcan
+        </div>
+
+        @can('admin-only')
+        <div x-show="showEditSchedule" style="display: none; margin-top: 16px; padding-top: 16px; border-top: 1px solid #f1f5f9;" x-cloak>
+            <form action="{{ route('admin.schedule.update') }}" method="POST" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)) auto; gap: 12px; align-items: flex-end;">
+                @csrf
+                <div>
+                    <label style="display: block; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 4px;">Pola Jadwal Rutin</label>
+                    <input type="text" name="collection_schedule" value="{{ $tenant?->collection_schedule }}" placeholder="Contoh: Setiap Minggu ke-2 & ke-4" class="calc-input" style="height: 40px; font-size: 13px;">
+                </div>
+                <div>
+                    <label style="display: block; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 4px;">Tanggal Buka Berikutnya</label>
+                    <input type="date" name="next_collection_date" value="{{ $tenant?->next_collection_date?->format('Y-m-d') }}" class="calc-input" style="height: 40px; font-size: 13px;">
+                </div>
+                <div>
+                    <label style="display: block; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 4px;">Catatan Posko (Jam / Instruksi)</label>
+                    <input type="text" name="collection_note" value="{{ $tenant?->collection_note }}" placeholder="Pukul 08:00 - 11:00 WIB di Balai Warga" class="calc-input" style="height: 40px; font-size: 13px;">
+                </div>
+                <div>
+                    <button type="submit" class="primary-button" style="height: 40px; padding: 0 16px; font-size: 13px; font-weight: 700; cursor: pointer;">
+                        Simpan Jadwal
+                    </button>
+                </div>
+            </form>
+        </div>
+        @endcan
+    </div>
+
     <!-- 2. Empat Kartu Metrik Utama -->
     <section class="metrics-grid">
         <article class="metric-card">
@@ -151,6 +207,20 @@
                 <div>
                     <strong style="color: #173f35; font-size: 14px; display: block;">Pencatatan Timbangan</strong>
                     <small style="color: #64748b; font-size: 12px; line-height: 1.4; display: block; margin-top: 2px;">Timbang sampah, hitung subtotal otomatis, cetak struk WA.</small>
+                </div>
+            </a>
+
+            <!-- Modul Gudang & Pengepul -->
+            <a href="{{ route('admin.sales.index') }}" style="text-decoration: none; background: #ffffff; border: 1.5px solid #e3e9e3; border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 8px; transition: all 0.2s ease; box-shadow: 0 4px 14px rgba(23,63,53,0.03);" onmouseover="this.style.borderColor='#38bdf8'; this.style.transform='translateY(-2px)'" onmouseout="this.style.borderColor='#e3e9e3'; this.style.transform='translateY(0)'">
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                    <span style="width: 38px; height: 38px; border-radius: 10px; background: #f0f9ff; color: #0284c7; display: flex; align-items: center; justify-content: center;">
+                        <x-icon name="package" size="18" />
+                    </span>
+                    <span style="font-size: 11px; font-weight: 800; color: #0369a1; background: #e0f2fe; padding: 2px 7px; border-radius: 6px;">{{ number_format($inventoryMetrics['total_stock_kg'], 1, ',', '.') }} kg Stok</span>
+                </div>
+                <div>
+                    <strong style="color: #173f35; font-size: 14px; display: block;">Gudang &amp; Pengepul</strong>
+                    <small style="color: #64748b; font-size: 12px; line-height: 1.4; display: block; margin-top: 2px;">Kelola stok siap angkut &amp; catat kas penjualan B2B (Laba: Rp {{ number_format($inventoryMetrics['total_gross_profit'], 0, ',', '.') }}).</small>
                 </div>
             </a>
 

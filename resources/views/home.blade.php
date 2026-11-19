@@ -70,6 +70,29 @@
         </div>
     </section>
 
+    @if(isset($tenant) && ($tenant->collection_schedule || $tenant->next_collection_date))
+    <div style="max-width: 1200px; margin: 24px auto 0; padding: 0 20px;">
+        <div style="background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%); border: 1.5px solid #a7f3d0; border-radius: 14px; padding: 16px 22px; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; box-shadow: 0 4px 14px rgba(5,150,105,0.06);">
+            <div style="display: flex; align-items: center; gap: 14px;">
+                <span style="width: 42px; height: 42px; border-radius: 12px; background: #059669; color: white; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                    <x-icon name="clock" size="20" />
+                </span>
+                <div>
+                    <strong style="color: #065f46; font-size: 14.5px; display: block;">Jadwal Penimbangan Sampah Berikutnya</strong>
+                    <span style="color: #047857; font-size: 13.5px;">
+                        {{ $tenant->next_collection_date ? $tenant->next_collection_date->translatedFormat('l, d F Y') : '' }}
+                        {{ $tenant->collection_schedule ? '('.$tenant->collection_schedule.')' : '' }}
+                        {{ $tenant->collection_note ? '· '.$tenant->collection_note : '' }}
+                    </span>
+                </div>
+            </div>
+            <span style="font-size: 12px; font-weight: 800; color: #065f46; background: #ffffff; padding: 5px 12px; border-radius: 20px; border: 1px solid #6ee7b7;">
+                Pos Timbang Buka
+            </span>
+        </div>
+    </div>
+    @endif
+
     <!-- Katalog Harga Beli Hari Ini -->
     <section class="price-section" id="harga">
         <div class="section-heading">
@@ -142,6 +165,7 @@
                             <button
                                 type="button"
                                 class="calc-preset-btn"
+                                :class="{ 'active': Number(weightInput) === p }"
                                 @click="weightInput = p"
                                 x-text="`${p} ${selectedCategory?.unit || 'kg'}`"
                             ></button>

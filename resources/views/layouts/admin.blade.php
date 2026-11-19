@@ -42,6 +42,11 @@
                     <span>Setoran</span>
                     @if(request()->routeIs('admin.weighing.*'))<i></i>@endif
                 </a>
+                <a href="{{ route('admin.sales.index') }}" class="{{ request()->routeIs('admin.sales.*') ? 'active' : '' }}">
+                    <span><x-icon name="package" size="18" /></span>
+                    <span>Gudang &amp; Pengepul</span>
+                    @if(request()->routeIs('admin.sales.*'))<i></i>@endif
+                </a>
                 <a href="{{ route('admin.residents.index') }}" class="{{ request()->routeIs('admin.residents.*') ? 'active' : '' }}">
                     <span><x-icon name="users" size="18" /></span>
                     <span>Warga</span>

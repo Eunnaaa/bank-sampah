@@ -224,7 +224,7 @@
                         </button>
                     </div>
                 </div>
-                <select id="select-resident" class="calc-select" x-model="selectedResidentId">
+                <select id="select-resident" class="calc-select" style="height: 44px; width: 100%;" x-model="selectedResidentId">
                     <option value="">-- Cari atau pilih warga nasabah --</option>
                     <template x-for="res in residents" :key="res.id">
                         <option :value="res.id" x-text="`${res.full_name} (${res.house_number} · RT ${res.rt}/RW ${res.rw})`"></option>
@@ -239,14 +239,14 @@
                     <template x-for="(it, idx) in items" :key="idx">
                         <div style="display: flex; gap: 12px; align-items: center; background: #fafafa; padding: 12px; border-radius: 8px; border: 1px solid #ebebeb;">
                             <div style="flex: 2;">
-                                <select class="calc-select" x-model="it.category_id">
+                                <select class="calc-select" style="height: 44px; width: 100%;" x-model="it.category_id">
                                     <template x-for="cat in categories" :key="cat.id">
                                         <option :value="cat.id" x-text="`${cat.name} (Rp ${Number(cat.price_per_unit).toLocaleString('id-ID')}/${cat.unit})`"></option>
                                     </template>
                                 </select>
                             </div>
                             <div style="flex: 1;">
-                                <input type="number" step="0.01" min="0.01" placeholder="Bobot" class="calc-input" x-model="it.weight">
+                                <input type="number" step="0.01" min="0.01" placeholder="Bobot" class="calc-input" style="height: 44px;" x-model="it.weight">
                             </div>
                             <div style="flex: 1; text-align: right; font-weight: 700; color: #1b5e20;">
                                 <small>Perkiraan</small><br>

@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class WasteCategory extends Model
 {
@@ -36,5 +37,10 @@ class WasteCategory extends Model
     public function transactionItems()
     {
         return $this->hasMany(TransactionItem::class, 'category_id');
+    }
+
+    public function saleItems(): HasMany
+    {
+        return $this->hasMany(OfftakerSaleItem::class, 'category_id');
     }
 }

@@ -71,7 +71,7 @@
 
             <!-- Filter Periode & Search -->
             <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
-                <select name="period" class="calc-select" style="width: auto; padding: 6px 12px; font-size: 13px;" onchange="this.form.submit()">
+                <select name="period" class="calc-select" style="width: auto; height: 36px; padding: 6px 32px 6px 12px; font-size: 13px;" onchange="this.form.submit()">
                     <option value="all" {{ $period === 'all' ? 'selected' : '' }}>Semua Periode</option>
                     <option value="month" {{ $period === 'month' ? 'selected' : '' }}>Bulan Ini</option>
                     <option value="3months" {{ $period === '3months' ? 'selected' : '' }}>3 Bulan Terakhir</option>

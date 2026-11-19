@@ -42,7 +42,8 @@
             phone_number: res.phone_number,
             rt: res.rt,
             rw: res.rw,
-            house_number: res.house_number
+            house_number: res.house_number,
+            savings_type: res.savings_type || 'regular'
         };
         this.showEditModal = true;
     },
@@ -72,6 +73,24 @@
         } finally {
             this.isLoadingHistory = false;
         }
+    },
+
+    getTxWaUrl(tx, resident) {
+        if (!resident || !tx) return '#';
+        let phone = (resident.phone_number || '').replace(/\D/g, '');
+        if (phone.startsWith('0')) phone = '62' + phone.slice(1);
+        if (!phone.startsWith('62')) phone = '62' + phone;
+
+        const isDeposit = tx.type === 'deposit';
+        let msg = '';
+        const dateFormatted = new Date(tx.created_at).toLocaleDateString('id-ID', {day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'});
+        if (isDeposit) {
+            const lines = (tx.items || []).map(it => `• ${it.category?.name || 'Komoditas'}: ${it.weight} ${it.category?.unit || 'kg'} × Rp ${Number(it.price_per_unit_at_transaction || 0).toLocaleString('id-ID')} = *Rp ${Number(it.subtotal || 0).toLocaleString('id-ID')}*`).join('\n');
+            msg = `*STRUK DIGITAL SETORAN BANK SAMPAH*\n------------------------------------\n*Nasabah:* ${resident.full_name}\n*Alamat:* ${resident.house_number}\n*Tanggal:* ${dateFormatted}\n*Petugas:* ${tx.officer?.full_name || 'Petugas RT'}\n\n*Rincian Setoran:*\n${lines}\n------------------------------------\n*Total Nilai Setoran:* *Rp ${Number(tx.total_amount).toLocaleString('id-ID')}*\n*Saldo Akhir:* *Rp ${tx.balance_after ? Number(tx.balance_after).toLocaleString('id-ID') : Number(resident.balance).toLocaleString('id-ID')}*\n\n*Terima kasih telah aktif memilah sampah untuk lingkungan bersih dan asri!* 🌿`;
+        } else {
+            msg = `*BUKTI PENCAIRAN KAS TUNAI*\n------------------------------------\n*Nasabah:* ${resident.full_name}\n*Alamat:* ${resident.house_number}\n*Tanggal:* ${dateFormatted}\n*Petugas:* ${tx.officer?.full_name || 'Petugas RT'}\n------------------------------------\n*Nominal Dicairkan:* *-Rp ${Number(tx.total_amount).toLocaleString('id-ID')}*\n*Saldo Akhir:* *Rp ${tx.balance_after ? Number(tx.balance_after).toLocaleString('id-ID') : Number(resident.balance).toLocaleString('id-ID')}*\n\n*Pencairan tabungan bank sampah berhasil diserahkan secara tunai.*`;
+        }
+        return `https://api.whatsapp.com/send?phone=${phone}&text=${encodeURIComponent(msg)}`;
     }
 }">
     <div class="page-header">
@@ -127,6 +146,11 @@
                         <a href="javascript:void(0)" @click="openHistory({{ Js::from($res) }})" style="color: inherit; text-decoration: none; border-bottom: 1px dashed #2e7d32;" title="Lihat Buku Mutasi Transaksi">
                             {{ $res->full_name }} <x-icon name="file-text" size="14" />
                         </a>
+                        <div style="margin-top: 4px;">
+                            <span style="display: inline-block; padding: 2px 7px; border-radius: 6px; font-size: 11px; font-weight: 700; {{ $res->savings_type === 'charity' ? 'background: #fef3c7; color: #92400e;' : ($res->savings_type === 'eid' ? 'background: #f0fdf4; color: #166534;' : 'background: #f1f5f9; color: #475569;') }}">
+                                {{ $res->savings_type_label }}
+                            </span>
+                        </div>
                     </td>
                     <td style="padding: 14px 16px;">{{ $res->phone_number }}</td>
                     <td style="padding: 14px 16px;">{{ $res->house_number }} (RT {{ $res->rt }}/RW {{ $res->rw }})</td>
@@ -217,6 +241,14 @@
                     <input type="text" name="house_number" class="calc-input" placeholder="Contoh: Blok B No. 12" required>
                 </div>
                 <div class="form-group" style="margin-top: 10px;">
+                    <label>Jenis Tabungan / Alokasi Saldo</label>
+                    <select name="savings_type" class="calc-select" style="height: 44px; width: 100%;">
+                        <option value="regular">Tabungan Reguler (Bebas Ditarik)</option>
+                        <option value="eid">Tabungan Hari Raya (Lebaran)</option>
+                        <option value="charity">Minat Sedekah Sampah (saldo warga)</option>
+                    </select>
+                </div>
+                <div class="form-group" style="margin-top: 10px;">
                     <label>PIN Awal 4-Digit (Opsional)</label>
                     <input type="password" name="pin" maxlength="4" class="calc-input" placeholder="Dapat diisi nanti oleh warga">
                 </div>
@@ -259,6 +291,14 @@
                 <div class="form-group" style="margin-top: 10px;">
                     <label>Nomor Rumah / Blok</label>
                     <input type="text" name="house_number" class="calc-input" x-model="editForm.house_number" required>
+                </div>
+                <div class="form-group" style="margin-top: 10px;">
+                    <label>Jenis Tabungan / Alokasi Saldo</label>
+                    <select name="savings_type" class="calc-select" style="height: 44px; width: 100%;" x-model="editForm.savings_type">
+                        <option value="regular">Tabungan Reguler (Bebas Ditarik)</option>
+                        <option value="eid">Tabungan Hari Raya (Lebaran)</option>
+                        <option value="charity">Minat Sedekah Sampah (saldo warga)</option>
+                    </select>
                 </div>
                 <div class="modal-actions" style="margin-top: 20px; display: flex; gap: 10px; justify-content: flex-end;">
                     <button type="button" class="secondary-button" @click="showEditModal = false">Batal</button>
@@ -413,6 +453,11 @@
                                 <div style="text-align: right;">
                                     <div style="font-weight: 700; font-size: 0.95rem;" :style="tx.type === 'deposit' ? 'color: #166534' : 'color: #991b1b'" x-text="(tx.type === 'deposit' ? '+Rp ' : '-Rp ') + Number(tx.total_amount).toLocaleString('id-ID')"></div>
                                     <div style="font-size: 0.75rem; color: #64748b;" x-text="tx.officer ? `Oleh: ${tx.officer.full_name}` : ''"></div>
+                                    <div style="margin-top: 4px;">
+                                        <a :href="getTxWaUrl(tx, selectedResident)" target="_blank" style="display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 6px; background: #25D366; color: white; font-size: 11px; font-weight: 700; text-decoration: none;">
+                                            <x-icon name="chat" size="12" /> Kirim WA
+                                        </a>
+                                    </div>
                                 </div>
                             </div>
                         </template>

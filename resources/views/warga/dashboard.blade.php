@@ -50,6 +50,9 @@
                     <span style="width: 7px; height: 7px; background: #22c55e; border-radius: 50%; box-shadow: 0 0 0 3px #bbf7d0;"></span>
                     Unit RT {{ $resident->rt ?? '05' }} / RW {{ $resident->rw ?? '08' }} · Nasabah Aktif
                 </span>
+                <span style="display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; background: {{ $resident->savings_type === 'charity' ? '#fef3c7; color: #92400e; border: 1px solid #fde68a;' : ($resident->savings_type === 'eid' ? '#f0fdf4; color: #166534; border: 1px solid #bbf7d0;' : '#f1f5f9; color: #475569; border: 1px solid #cbd5e1;') }}; font-size: 12px; font-weight: 700; border-radius: 8px;">
+                    {{ $resident->savings_type_label }}
+                </span>
                 <span style="font-size: 12px; color: #64748b; font-weight: 600;">
                     Peringkat #{{ $residentRank }} Teraktif dari {{ $totalResidents }} KK Terdaftar
                 </span>
@@ -74,6 +77,27 @@
             </button>
         </div>
     </div>
+
+    @if($resident->tenant && ($resident->tenant->collection_schedule || $resident->tenant->next_collection_date))
+    <div style="background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%); border: 1.5px solid #a7f3d0; border-radius: 14px; padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <span style="width: 38px; height: 38px; border-radius: 10px; background: #059669; color: white; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                <x-icon name="clock" size="18" />
+            </span>
+            <div>
+                <strong style="color: #065f46; font-size: 14px; display: block;">Jadwal Penimbangan Sampah Berikutnya di Pos RT</strong>
+                <span style="color: #047857; font-size: 13px;">
+                    {{ $resident->tenant->next_collection_date ? $resident->tenant->next_collection_date->translatedFormat('l, d F Y') : '' }}
+                    {{ $resident->tenant->collection_schedule ? '('.$resident->tenant->collection_schedule.')' : '' }}
+                    {{ $resident->tenant->collection_note ? '· '.$resident->tenant->collection_note : '' }}
+                </span>
+            </div>
+        </div>
+        <span style="font-size: 11.5px; font-weight: 800; color: #065f46; background: #ffffff; padding: 4px 10px; border-radius: 20px; border: 1px solid #6ee7b7;">
+            Siapkan Sampahmu
+        </span>
+    </div>
+    @endif
 
     <!-- 2. Empat Kartu Metrik Utama (Identik dengan Dashboard Admin Metrics Grid) -->
     <section class="metrics-grid">

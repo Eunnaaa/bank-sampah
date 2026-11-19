@@ -84,7 +84,7 @@ class CategoryController extends Controller
             $cat = WasteCategory::forTenant(auth()->user()->tenant_id)->lockForUpdate()->findOrFail($id);
             $validated = $request->validated();
 
-            if ($validated['unit'] !== $cat->unit && $cat->transactionItems()->exists()) {
+            if ($validated['unit'] !== $cat->unit && ($cat->transactionItems()->exists() || $cat->saleItems()->exists())) {
                 throw ValidationException::withMessages(['unit' => 'Satuan komoditas yang sudah digunakan tidak dapat diubah. Buat komoditas baru untuk satuan berbeda.']);
             }
 
@@ -113,7 +113,7 @@ class CategoryController extends Controller
     {
         return DB::transaction(function () use ($id): RedirectResponse {
             $cat = WasteCategory::forTenant(auth()->user()->tenant_id)->lockForUpdate()->findOrFail($id);
-            if ($cat->transactionItems()->count() > 0) {
+            if ($cat->transactionItems()->exists() || $cat->saleItems()->exists()) {
                 $cat->update(['is_active' => false]);
 
                 AuditLog::create([

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Profile;
+use App\Models\Tenant;
 use App\Models\Transaction;
 use App\Models\TransactionItem;
 use App\Models\WasteCategory;
@@ -30,7 +31,9 @@ class PublicController extends Controller
             'periodLabel' => Carbon::now(config('app.business_timezone'))->translatedFormat('F Y'),
         ];
 
-        return view('home', compact('categories', 'report'));
+        $tenant = Tenant::where('status', 'active')->first();
+
+        return view('home', compact('categories', 'report', 'tenant'));
     }
 
     public function warga(Request $request)

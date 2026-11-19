@@ -5,6 +5,7 @@ namespace App\Actions;
 use App\Models\AuditLog;
 use App\Models\Profile;
 use App\Models\Transaction;
+use App\Models\TransactionItem;
 use App\Models\WasteCategory;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -37,18 +38,28 @@ class RecordDepositAction
                 if ($hundredths <= 0) {
                     throw new \InvalidArgumentException('Bobot setoran harus lebih dari nol.');
                 }
-                $weights[$item['category_id']] = ($weights[$item['category_id']] ?? 0) + $hundredths;
-                if ($weights[$item['category_id']] > 9999999999) {
+                $categoryId = strtolower($item['category_id']);
+                $weights[$categoryId] = ($weights[$categoryId] ?? 0) + $hundredths;
+                if ($weights[$categoryId] > 9999999999) {
                     throw new \InvalidArgumentException('Total bobot satu komoditas melebihi batas penyimpanan.');
                 }
             }
 
+            $categories = WasteCategory::forTenant($actor->tenant_id)
+                ->whereIn('id', array_keys($weights))
+                ->where('is_active', true)
+                ->orderBy('id')
+                ->lockForUpdate()
+                ->get()
+                ->keyBy('id');
+
+            if ($categories->count() !== count($weights)) {
+                throw new \InvalidArgumentException('Semua komoditas setoran harus aktif dan terdaftar di RT Anda.');
+            }
+
             // 2. Snapshot harga saat timbang
             foreach ($weights as $categoryId => $hundredths) {
-                $category = WasteCategory::forTenant($actor->tenant_id)->where('id', $categoryId)
-                    ->where('is_active', true)
-                    ->sharedLock()
-                    ->firstOrFail();
+                $category = $categories[$categoryId];
 
                 $weight = $hundredths / 100;
                 $subtotal = intdiv($hundredths, 100) * $category->price_per_unit
@@ -65,6 +76,7 @@ class RecordDepositAction
                 $preparedItems[] = [
                     'id' => Str::uuid(),
                     'category_id' => $category->id,
+                    'inventory_sequence' => (int) TransactionItem::where('category_id', $category->id)->max('inventory_sequence') + 1,
                     'weight' => $weight,
                     'price_per_unit_at_transaction' => $category->price_per_unit,
                     'subtotal' => $subtotal,

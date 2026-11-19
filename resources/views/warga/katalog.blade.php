@@ -95,6 +95,7 @@
                             <button
                                 type="button"
                                 class="calc-preset-btn"
+                                :class="{ 'active': Number(weightInput) === p }"
                                 @click="weightInput = p"
                                 x-text="`${p} ${selectedCategory?.unit || 'kg'}`"
                             ></button>

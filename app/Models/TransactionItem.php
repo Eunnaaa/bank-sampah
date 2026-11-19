@@ -21,7 +21,7 @@ class TransactionItem extends Model
 
     protected $fillable = [
         'transaction_id', 'category_id', 'weight',
-        'price_per_unit_at_transaction', 'subtotal',
+        'price_per_unit_at_transaction', 'subtotal', 'inventory_sequence',
     ];
 
     protected $casts = [

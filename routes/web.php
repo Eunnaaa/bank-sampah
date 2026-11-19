@@ -7,6 +7,7 @@ use App\Http\Controllers\BalanceController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\HelpController;
 use App\Http\Controllers\OfficerController;
+use App\Http\Controllers\OfftakerSaleController;
 use App\Http\Controllers\PublicController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\ResidentAuthController;
@@ -88,6 +89,12 @@ Route::middleware(['auth', 'staff.auth'])->prefix('admin')->name('admin.')->grou
     Route::get('/warga/{id}/riwayat', [ResidentController::class, 'history'])->name('residents.history');
     Route::get('/transaksi/{id}', [WeighingController::class, 'show'])->name('transactions.show');
 
+    // Penjualan ke Pengepul & Gudang Logistik
+    Route::get('/penjualan', [OfftakerSaleController::class, 'index'])->name('sales.index');
+    Route::get('/penjualan/buat', [OfftakerSaleController::class, 'create'])->name('sales.create');
+    Route::post('/penjualan', [OfftakerSaleController::class, 'store'])->name('sales.store');
+    Route::get('/penjualan/{id}', [OfftakerSaleController::class, 'show'])->name('sales.show');
+
     // Rute Khusus Administrator (Pengurus RT)
     Route::middleware(['can:admin-only'])->group(function () {
         // Manajemen Petugas (HANYA Pengurus RT yang bisa membuat akun petugas)
@@ -100,6 +107,7 @@ Route::middleware(['auth', 'staff.auth'])->prefix('admin')->name('admin.')->grou
         Route::post('/warga/{id}/undangan', [ResidentController::class, 'invite'])->name('residents.invite');
         Route::post('/warga/{id}/reset-pin', [ResidentController::class, 'resetPin'])->name('residents.reset-pin');
         Route::post('/warga/tarik', [ResidentController::class, 'withdraw'])->name('residents.withdraw')->middleware('throttle:withdrawals');
+        Route::post('/jadwal-operasional', [AdminDashboardController::class, 'updateSchedule'])->name('schedule.update');
         Route::post('/kategori', [CategoryController::class, 'store'])->name('categories.store');
         Route::put('/kategori/{id}', [CategoryController::class, 'update'])->name('categories.update');
         Route::delete('/kategori/{id}', [CategoryController::class, 'destroy'])->name('categories.destroy');

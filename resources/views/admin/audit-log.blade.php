@@ -17,8 +17,8 @@
     <!-- Filter & Pencarian Audit Log -->
     <div class="table-controls" style="margin-top: 20px; display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between;">
         <form action="{{ route('admin.audit-log.index') }}" method="GET" style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center;">
-            <input type="text" name="q" value="{{ request('q') }}" placeholder="Cari pelaku atau detail..." class="calc-input" style="max-width: 320px;">
-            <select name="action" class="calc-select" style="max-width: 220px;" onchange="this.form.submit()">
+            <input type="text" name="q" value="{{ request('q') }}" placeholder="Cari pelaku atau detail..." class="calc-input" style="height: 40px; max-width: 320px;">
+            <select name="action" class="calc-select" style="height: 40px; max-width: 220px;" onchange="this.form.submit()">
                 <option value="">-- Semua Jenis Aksi --</option>
                 @foreach($distinctActions as $act)
                     <option value="{{ $act }}" {{ request('action') === $act ? 'selected' : '' }}>{{ $act }}</option>

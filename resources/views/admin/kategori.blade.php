@@ -132,7 +132,7 @@
                 </div>
                 <div class="form-group" style="margin-top: 10px;">
                     <label>Satuan Ukur</label>
-                    <select name="unit" class="calc-select" required>
+                    <select name="unit" class="calc-select" style="height: 44px; width: 100%;" required>
                         <option value="kg">Kilogram (kg)</option>
                         <option value="liter">Liter (liter)</option>
                         <option value="unit">Unit / Satuan (unit)</option>
@@ -166,7 +166,7 @@
                 </div>
                 <div class="form-group" style="margin-top: 10px;">
                     <label>Satuan Ukur</label>
-                    <select name="unit" class="calc-select" x-model="editForm.unit" required>
+                    <select name="unit" class="calc-select" style="height: 44px; width: 100%;" x-model="editForm.unit" required>
                         <option value="kg">Kilogram (kg)</option>
                         <option value="liter">Liter (liter)</option>
                         <option value="unit">Unit / Satuan (unit)</option>

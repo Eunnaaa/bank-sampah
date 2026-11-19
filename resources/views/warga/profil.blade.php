@@ -204,7 +204,7 @@
                     <div x-show="channel === 'transfer_bank'" x-cloak style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px; margin-bottom: 14px; display: flex; flex-direction: column; gap: 10px;">
                         <div class="form-group">
                             <label for="bank-provider" style="font-size: 0.82rem; font-weight: 600; color: #334155;">Pilih Bank Tujuan</label>
-                            <select id="bank-provider" name="provider" class="calc-input" :disabled="channel !== 'transfer_bank'" :required="channel === 'transfer_bank'">
+                            <select id="bank-provider" name="provider" class="calc-select" style="height: 44px; width: 100%;" :disabled="channel !== 'transfer_bank'" :required="channel === 'transfer_bank'">
                                 <option value="">-- Pilih Bank --</option>
                                 @foreach($banks ?? \App\Services\DisbursementService::BANKS as $code => $bankName)
                                     <option value="{{ $code }}" {{ old('provider') === $code ? 'selected' : '' }}>{{ $bankName }}</option>
@@ -225,7 +225,7 @@
                     <div x-show="channel === 'ewallet'" x-cloak style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px; margin-bottom: 14px; display: flex; flex-direction: column; gap: 10px;">
                         <div class="form-group">
                             <label for="ewallet-provider" style="font-size: 0.82rem; font-weight: 600; color: #334155;">Pilih Dompet Digital</label>
-                            <select id="ewallet-provider" name="provider" class="calc-input" :disabled="channel !== 'ewallet'" :required="channel === 'ewallet'">
+                            <select id="ewallet-provider" name="provider" class="calc-select" style="height: 44px; width: 100%;" :disabled="channel !== 'ewallet'" :required="channel === 'ewallet'">
                                 <option value="">-- Pilih E-Wallet --</option>
                                 @foreach($ewallets ?? \App\Services\DisbursementService::EWALLETS as $code => $walletName)
                                     <option value="{{ $code }}" {{ old('provider') === $code ? 'selected' : '' }}>{{ $walletName }}</option>
