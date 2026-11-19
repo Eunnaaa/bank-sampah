@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreOfficerRequest;
 use App\Models\AuditLog;
 use App\Models\Profile;
 use Illuminate\Http\RedirectResponse;
@@ -22,33 +23,24 @@ class OfficerController extends Controller
         return view('admin.petugas', compact('officers'));
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(StoreOfficerRequest $request): RedirectResponse
     {
         return DB::transaction(function () use ($request): RedirectResponse {
-            $cleanPhone = Profile::normalizePhoneNumber($request->input('phone_number', ''));
-            $request->merge(['phone_number' => $cleanPhone]);
-
-            $request->validate([
-                'full_name' => 'required|string|max:255',
-                'phone_number' => 'required|string|unique:profiles,phone_number',
-                'house_number' => 'required|string|max:50',
-                'password' => 'required|string|min:6',
-            ]);
-
+            $validated = $request->validated();
             $tenantId = auth()->user()->tenant_id;
 
             // Akun petugas HANYA bisa dibuat oleh RT dan perannya dikunci 'officer'
             $officer = Profile::create([
                 'id' => Str::uuid(),
                 'tenant_id' => $tenantId,
-                'full_name' => $request->full_name,
-                'phone_number' => $cleanPhone,
+                'full_name' => $validated['full_name'],
+                'phone_number' => $validated['phone_number'],
                 'rt' => $request->input('rt', auth()->user()->rt ?? '05'),
                 'rw' => $request->input('rw', auth()->user()->rw ?? '08'),
-                'house_number' => $request->house_number,
+                'house_number' => $validated['house_number'],
                 'role' => 'officer', // STRICTLY OFFICER - RT TIDAK DAPAT MEMBUAT ADMIN BARU
                 'balance' => 0,
-                'password_hash' => Hash::make($request->password),
+                'password_hash' => Hash::make($validated['password']),
             ]);
 
             AuditLog::create([
@@ -59,7 +51,7 @@ class OfficerController extends Controller
                 'action' => 'CREATE_OFFICER',
                 'target_type' => 'profile',
                 'target_id' => $officer->id,
-                'details' => "Pengurus RT mendaftarkan petugas baru: {$officer->full_name} ({$cleanPhone})",
+                'details' => "Pengurus RT mendaftarkan petugas baru: {$officer->full_name} ({$validated['phone_number']})",
                 'ip_address' => $request->ip(),
             ]);
 

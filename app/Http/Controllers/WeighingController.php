@@ -3,12 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Actions\RecordDepositAction;
+use App\Http\Requests\StoreWeighingRequest;
 use App\Models\Profile;
 use App\Models\Transaction;
 use App\Models\WasteCategory;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Database\UniqueConstraintViolationException;
-use Illuminate\Http\Request;
 
 class WeighingController extends Controller
 {
@@ -40,16 +40,9 @@ class WeighingController extends Controller
         ]);
     }
 
-    public function store(Request $request, RecordDepositAction $action)
+    public function store(StoreWeighingRequest $request, RecordDepositAction $action)
     {
-        $validated = $request->validate([
-            'resident_id' => 'required|uuid',
-            'request_id' => 'required|uuid',
-            'items' => 'required|array|min:1|max:100',
-            'items.*.category_id' => 'required|uuid',
-            'items.*.weight' => 'required|numeric|min:0.01|max:99999999.99|decimal:0,2',
-            'notes' => 'nullable|string|max:255',
-        ]);
+        $validated = $request->validated();
 
         try {
             $result = $action->execute(

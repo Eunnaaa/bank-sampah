@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreWasteCategoryRequest;
+use App\Http\Requests\UpdateWasteCategoryRequest;
 use App\Models\AuditLog;
 use App\Models\WasteCategory;
 use Illuminate\Http\RedirectResponse;
@@ -19,21 +21,17 @@ class CategoryController extends Controller
         return view('admin.kategori', compact('categories'));
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(StoreWasteCategoryRequest $request): RedirectResponse
     {
         return DB::transaction(function () use ($request): RedirectResponse {
-            $request->validate([
-                'name' => 'required|string|max:100',
-                'unit' => 'required|in:kg,liter,unit',
-                'price_per_unit' => 'required|integer|min:1',
-            ]);
+            $validated = $request->validated();
 
             $cat = WasteCategory::create([
                 'id' => Str::uuid(),
                 'tenant_id' => auth()->user()->tenant_id,
-                'name' => $request->name,
-                'unit' => $request->unit,
-                'price_per_unit' => $request->price_per_unit,
+                'name' => $validated['name'],
+                'unit' => $validated['unit'],
+                'price_per_unit' => $validated['price_per_unit'],
                 'is_active' => true,
             ]);
 
@@ -80,15 +78,11 @@ class CategoryController extends Controller
         });
     }
 
-    public function update(Request $request, string $id): RedirectResponse
+    public function update(UpdateWasteCategoryRequest $request, string $id): RedirectResponse
     {
         return DB::transaction(function () use ($request, $id): RedirectResponse {
             $cat = WasteCategory::forTenant(auth()->user()->tenant_id)->lockForUpdate()->findOrFail($id);
-            $validated = $request->validate([
-                'name' => 'required|string|max:100',
-                'unit' => 'required|in:kg,liter,unit',
-                'price_per_unit' => 'required|integer|min:1',
-            ]);
+            $validated = $request->validated();
 
             if ($validated['unit'] !== $cat->unit && $cat->transactionItems()->exists()) {
                 throw ValidationException::withMessages(['unit' => 'Satuan komoditas yang sudah digunakan tidak dapat diubah. Buat komoditas baru untuk satuan berbeda.']);

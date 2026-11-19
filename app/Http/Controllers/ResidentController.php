@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Actions\RecordWithdrawalAction;
+use App\Http\Requests\WithdrawBalanceRequest;
 use App\Models\AuditLog;
 use App\Models\Profile;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -216,26 +217,19 @@ class ResidentController extends Controller
         ]);
     }
 
-    public function withdraw(Request $request, RecordWithdrawalAction $action)
+    public function withdraw(WithdrawBalanceRequest $request, RecordWithdrawalAction $action)
     {
-        $request->validate([
-            'resident_id' => 'required|uuid',
-            'request_id' => 'required|uuid',
-            'amount' => 'required|integer|min:1',
-            'notes' => 'nullable|string|max:255',
-            'authorization_code' => 'required|string|size:12|alpha_num:ascii',
-            'admin_password' => 'required|string|max:255',
-        ]);
+        $validated = $request->validated();
 
         try {
             $result = $action->execute(
-                $request->resident_id,
+                $validated['resident_id'],
                 auth()->id(),
-                $request->amount,
-                $request->authorization_code,
-                $request->admin_password,
-                $request->notes,
-                $request->request_id
+                $validated['amount'],
+                $validated['authorization_code'],
+                $validated['admin_password'],
+                $validated['notes'] ?? null,
+                $validated['request_id']
             );
 
             $request->session()->forget(['success', 'info']);

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\AuthorizeWithdrawalRequest;
 use App\Models\AuditLog;
 use App\Models\Profile;
 use App\Models\WasteCategory;
@@ -229,16 +230,9 @@ class ResidentDashboardController extends Controller
         ]);
     }
 
-    public function authorizeWithdrawal(Request $request): RedirectResponse
+    public function authorizeWithdrawal(AuthorizeWithdrawalRequest $request): RedirectResponse
     {
-        $validated = $request->validate([
-            'amount' => 'required|integer|min:1',
-            'current_pin' => 'required|digits:4',
-            'channel' => 'nullable|in:tunai,transfer_bank,ewallet',
-            'provider' => 'nullable|required_if:channel,transfer_bank,ewallet|string|max:50',
-            'account_number' => 'nullable|required_if:channel,transfer_bank,ewallet|string|max:50',
-            'account_holder' => 'nullable|required_if:channel,transfer_bank,ewallet|string|max:100',
-        ]);
+        $validated = $request->validated();
 
         $channel = $validated['channel'] ?? 'tunai';
         $provider = $validated['provider'] ?? null;
